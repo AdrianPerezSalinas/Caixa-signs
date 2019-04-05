@@ -1,11 +1,12 @@
 import numpy as np
 from scipy.linalg import logm
 import cv2
+import os
 
 
-def image_preprocess(img_path, size=4):
+def image_preprocess(img_path, scales):
     img = cv2.imread(img_path, 0)
-    rows, cols = (2**size, 2**size)
+    rows, cols = (2**scales, 2**scales)
 
     dst = cv2.resize(img, (cols, rows), interpolation=cv2.INTER_CUBIC)
     dst = np.max(dst) - dst
@@ -53,7 +54,9 @@ def coords_ket(image_matrix):
 def partial_trace(rho, i):
     #This function performs the partial trace respect to one of the qubits
     qubits = int(np.round(np.log2(rho.shape[0])))
+
     #rho = np.outer(psi, np.conj(psi))
+    
     red_rho = np.zeros((2**(qubits - 1), 2**(qubits - 1)))
     for r in range(2**(qubits-1)):
         r_ = r % (2**i) + 2*(r - r % (2**i))
@@ -65,6 +68,7 @@ def partial_trace(rho, i):
 
 
     return red_rho
+    
 
 
 def trace_scale(rho, i):
@@ -101,45 +105,50 @@ def entropy(rho):
     return -np.sum(lambdas*log_lambdas)
 
 
-def CumScalesEntropy(rho, scales=4):
+def CumScalesEntropy(rho, scales):
     rho_ = rho.copy()
     dict = {}
     for i in range(scales):
-        print(rho_.shape)
         rho_ = trace_scale(rho_, 0)
-        e = np.real(entropy(rho_))
-        print(e)
+        e = entropy(rho)
         dict['Entropy {}'.format(i)] = e
 
     return dict, [i for i in range(scales)]
 
 
-def InvCumScalesEntropy(rho, scales=4):
+def InvCumScalesEntropy(rho, scales):
     rho_ = rho.copy()
     dict = {}
     for i in range(scales-1,-1,-1):
         rho_ = trace_scale(rho_, i)
-        e = np.real(entropy(rho_))
+        e = entropy(rho)
         dict['Entropy {}'.format(i)] = e
 
     return dict, [i for i in range(scales-1,-1,-1)]
 
-def CumCoordsEntropy(rho, coord, scales=4):
+def CumCoordsEntropy(rho, coord, scales):
     rho_ = rho.copy()
     dict = {}
     for i in range(scales):
         rho_ = trace_coords(rho_, 0, coord)
-        e = np.real(entropy(rho_))
+        e = entropy(rho)
         dict['Entropy {}'.format(i)] = e
 
     return dict, [i for i in range(scales)]
 
-def InvCumCoordsEntropy(rho, coord, scales=4):
+def InvCumCoordsEntropy(rho, coord, scales):
     rho_ = rho.copy()
     dict = {}
     for i in range(scales-1,-1,-1):
         rho_ = trace_coords(rho_, i, coord)
-        e = np.real(entropy(rho_))
+        e = entropy(rho)
         dict['Entropy {}'.format(i)] = e
 
     return dict, [i for i in range(scales-1,-1,-1)]
+
+def createFolder(directory):
+    try:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+    except OSError:
+        print ('Error: Creating directory. ' + directory)
