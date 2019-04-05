@@ -1,10 +1,24 @@
 import numpy as np
 from scipy.linalg import logm
-def locator(image_matrix):
+import cv2
+
+
+def image_preprocess(img_path, size=4):
+    img = cv2.imread(img_path, 0)
+    rows, cols = (2**size, 2**size)
+
+    dst = cv2.resize(img, (cols, rows), interpolation=cv2.INTER_CUBIC)
+    dst = np.max(dst) - dst
+
+    return dst
+
+
+def scale_ket(image_matrix):
+    #This function encodes a matrix inside a quantum state using the scaling procedure.
+    #The matrix has to be a square
     rows = max(np.shape(image_matrix))
     cols = rows
     qubits = 2*int(np.floor(np.log2(rows)))
-    pow = 2**(qubits - 1)
     psi = np.zeros(2**qubits)
     for r in range(rows):
         r_string = np.binary_repr(r, width=int(qubits/2))
@@ -19,8 +33,25 @@ def locator(image_matrix):
     psi = psi/np.linalg.norm(psi)
     return psi
 
+def coords_ket(image_matrix):
+    #This function encodes a matrix inside a quantum state using the x/y procedure.
+    #The matrix has to be a square
+    rows = max(np.shape(image_matrix))
+    cols = rows
+    qubits = 2 * int(np.floor(np.log2(rows)))
+    psi = np.zeros(2 ** qubits)
+    for r in range(rows):
+        for c in range(cols):
+            string = np.binary_repr(r, width=int(qubits/2)) + np.binary_repr(c, width=int(qubits/2))
+            index = int(string, base=2)
+            psi[index] = image_matrix[r, c]
+
+    psi = psi / np.linalg.norm(psi)
+    return psi
+
 
 def partial_trace(rho, i):
+    #This function performs the partial trace respect to one of the qubits
     qubits = int(np.round(np.log2(rho.shape[0])))
     #rho = np.outer(psi, np.conj(psi))
     red_rho = np.zeros((2**(qubits - 1), 2**(qubits - 1)))
@@ -36,7 +67,9 @@ def partial_trace(rho, i):
     return red_rho
 
 
-def traces_scale(rho, i):
+def trace_scale(rho, i):
+    #This function performs the partial trace respect to one of the scales
+    #It will work only for kets encoded properly
     qubits = int(np.round(np.log2(rho.shape[0])))
     if i > qubits/2:
         raise ValueError('Non sense size')
@@ -46,6 +79,19 @@ def traces_scale(rho, i):
 
     return red_rho
 
+def trace_coords(rho, i, coord):
+    # This function performs the partial trace respect to one of the scales
+    # It will work only for kets encoded properly
+    qubits_per_coord = int(np.round(np.log2(rho.shape[0]))/2)
+    if coord=='x': q = i
+    if coord=='y': q = qubits_per_coord + i
+
+    rho_ = partial_trace(rho, q)
+
+    return rho_
+
+
+
 def entropy(rho):
     lambdas = np.linalg.eigvalsh(rho)
     log_lambdas = np.zeros(len(lambdas))
@@ -53,3 +99,47 @@ def entropy(rho):
         if l > 1e-5:
             log_lambdas = np.log(l)
     return -np.sum(lambdas*log_lambdas)
+
+
+def CumScalesEntropy(rho, scales=4):
+    rho_ = rho.copy()
+    dict = {}
+    for i in range(scales):
+        print(rho_.shape)
+        rho_ = trace_scale(rho_, 0)
+        e = np.real(entropy(rho_))
+        print(e)
+        dict['Entropy {}'.format(i)] = e
+
+    return dict, [i for i in range(scales)]
+
+
+def InvCumScalesEntropy(rho, scales=4):
+    rho_ = rho.copy()
+    dict = {}
+    for i in range(scales-1,-1,-1):
+        rho_ = trace_scale(rho_, i)
+        e = np.real(entropy(rho_))
+        dict['Entropy {}'.format(i)] = e
+
+    return dict, [i for i in range(scales-1,-1,-1)]
+
+def CumCoordsEntropy(rho, coord, scales=4):
+    rho_ = rho.copy()
+    dict = {}
+    for i in range(scales):
+        rho_ = trace_coords(rho_, 0, coord)
+        e = np.real(entropy(rho_))
+        dict['Entropy {}'.format(i)] = e
+
+    return dict, [i for i in range(scales)]
+
+def InvCumCoordsEntropy(rho, coord, scales=4):
+    rho_ = rho.copy()
+    dict = {}
+    for i in range(scales-1,-1,-1):
+        rho_ = trace_coords(rho_, i, coord)
+        e = np.real(entropy(rho_))
+        dict['Entropy {}'.format(i)] = e
+
+    return dict, [i for i in range(scales-1,-1,-1)]
