@@ -3,48 +3,36 @@ import csv
 import numpy as np
 import os
 
-directory = './Data/OK'
+directory = './Data/KO'
 for filename in os.listdir(directory):
-    if filename.endswith('.png'):
+    if filename == '5152867_p1_s0.png': #.endswith('.png'):
         dir_filname = os.path.join(directory, filename[:-4])
-        mat = image_preprocess(os.path.join(directory, filename))
+        mat = image_preprocess(os.path.join(directory, filename), 8)
         with open(dir_filname + '.csv', mode='w') as csv_file:
             fields = ['Measurement','Entropy 0', 'Entropy 1', 'Entropy 2', 'Entropy 3', 'Entropy 4',
-                      'Entropy 5', 'Entropy 6']
+                      'Entropy 5', 'Entropy 6', 'Entropy 7']
             writer = csv.DictWriter(csv_file, fieldnames=fields)
             writer.writeheader()
 
             sc_ket = scale_ket(mat)
-            rho = np.outer(sc_ket, sc_ket)
-            d, l = CumScalesEntropy(rho)
-            d['Measurement'] = 'Cumulative Scale Entropy'
-            print(d)
-            writer.writerow(d)
+            d1 = CumScalesEntropy(sc_ket)
+            d1['Measurement'] = 'CumScales'
+            writer.writerow(d1)
 
-            d, l = InvCumScalesEntropy(rho)
-            d['Measurement'] = 'Inverse Cumulative Scale Entropy'
-            print(d)
-            writer.writerow(d)
+            d1 = ScalesEntropy(sc_ket)
+            d1['Measurement'] = 'Scales'
+            writer.writerow(d1)
 
-            d, l = CumCoordsEntropy(rho,'x')
-            d['Measurement'] = 'Cumulative x-coord Entropy'
-            print(d)
-            writer.writerow(d)
-
-            d, l = CumCoordsEntropy(rho, 'y')
-            d['Measurement'] = 'Cumulative y-coord Entropy'
-            print(d)
-            writer.writerow(d)
-
-            d, l = InvCumCoordsEntropy(rho, 'x')
-            d['Measurement'] = 'Inverse cumulative x-coord Entropy'
-            print(d)
-            writer.writerow(d)
-
-            d, l = InvCumCoordsEntropy(rho, 'y')
-            d['Measurement'] = 'Inverse cumulative y-coord Entropy'
-            print(d)
-            writer.writerow(d)
+            coord_ket = coords_ket(mat)
+            d1 = CumScalesEntropy(coord_ket)
+            d1['Measurement'] = 'Coords'
+            writer.writerow(d1)
+            '''
+            coord_ket = coords_ket(mat)
+            d2 = CumCoordsEntropy(coord_ket)
+            d2['Measurement'] = 'Coords'
+            writer.writerow(d2)
+            '''
 
         print(dir_filname)
 

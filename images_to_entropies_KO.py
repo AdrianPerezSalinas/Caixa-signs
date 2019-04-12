@@ -18,32 +18,26 @@ for filename in os.listdir(directory):
             rho = np.outer(sc_ket, sc_ket)
             d, l = CumScalesEntropy(rho)
             d['Measurement'] = 'Cumulative Scale Entropy'
-            print(d)
             writer.writerow(d)
 
             d, l = InvCumScalesEntropy(rho)
             d['Measurement'] = 'Inverse Cumulative Scale Entropy'
-            print(d)
             writer.writerow(d)
 
             d, l = CumCoordsEntropy(rho,'x')
             d['Measurement'] = 'Cumulative x-coord Entropy'
-            print(d)
             writer.writerow(d)
 
             d, l = CumCoordsEntropy(rho, 'y')
             d['Measurement'] = 'Cumulative y-coord Entropy'
-            print(d)
             writer.writerow(d)
 
             d, l = InvCumCoordsEntropy(rho, 'x')
             d['Measurement'] = 'Inverse cumulative x-coord Entropy'
-            print(d)
             writer.writerow(d)
 
             d, l = InvCumCoordsEntropy(rho, 'y')
             d['Measurement'] = 'Inverse cumulative y-coord Entropy'
-            print(d)
             writer.writerow(d)
 
         print(dir_filname)
