@@ -3,8 +3,9 @@ import csv
 import numpy as np
 import os
 import pandas as pd
+import random
 
-directory = ['./Data/KO','./Data/OK']
+directory = ['./Data/KO', './Data/OK']
 data = []
 for dir in directory:
     for filename in os.listdir(dir):
@@ -36,66 +37,58 @@ for dir in directory:
 shape = data[0][0].shape
 M = list(range(shape[0]))
 E = list(range(shape[1]))
-ds = [d[0] for d in data]
-ls = [d[1] for d in data]
+random.shuffle(data)
+ds = [d[0] for d in data[:60]]
+for i,ent in enumerate(ds):
+    ent = np.delete(ent, 4)
+    ds[i] = ent
+
+ds_test = [d[0] for d in data[60:]]
+for i,ent in enumerate(ds_test):
+    ent = np.delete(ent, 4)
+    ds_test[i] = ent
+
+ls = [d[1] for d in data[:31]]
+ls_test = [d[1] for d in data[31:]]
 maxs = np.maximum(ds[0], ds[1])
 mins = np.minimum(ds[0], ds[1])
 for i, d in enumerate(ds[2:]):
     maxs = np.maximum(maxs, d)
     mins = np.minimum(mins, d)
 
-
 Thresholds = np.zeros(maxs.shape)
 Rating = []
-for m in M:
-    for e in E:
-        R = np.linspace(mins[m, e], maxs[m, e])
-        rates = np.array([R[0], 0, 0])
-        for r in R:
-            success = 0
-            fail = 0
-            for d, label in zip(ds, ls):
-                if (d[m, e] > r) == label: success += 1
-                else: fail += 1
-            rates_candidate = np.array([r, success, fail])
+for m in range(maxs.shape[0]):
+    R = np.linspace(mins[m], maxs[m])
+    rates = np.array([R[0], 0, 0])
+    for r in R:
+        success = 0
+        fail = 0
+        for d, label in zip(ds, ls):
+            if (d[m] > r) == label: success += 1
+            else: fail += 1
+        rates_candidate = np.array([r, success, fail])
 
-            if np.max(rates) < np.max(rates_candidate):
-                rates = rates_candidate
+        if np.max(rates) < np.max(rates_candidate):
+            rates = rates_candidate
 
-        Rating.append(rates)
-        if rates[1] < rates[2]: Rat = -rates[0]
-        else: Rat = +rates[0]
-        Thresholds[m, e] = Rat
+    Rating.append(rates)
+    if rates[1] < rates[2]: Rat = -rates[0]
+    else: Rat = +rates[0]
+    Thresholds[m] = Rat
 
 signs = np.sign(Thresholds)
 aciertos = 0
-fallos = 0
-for d, label in zip(ds, ls):
-    sign_d = Thresholds*d
+for d, label in zip(ds_test, ls_test):
+    sign_d = signs*d
     suc = sign_d > Thresholds
     claim = np.sum(suc)
-    if claim >= 11:
-        aciertos += 1
-    else: fallos += 1
+    if claim > 12:
+        lab = 1
+    else:
+        lab = 0
 
-print('ACIERTOS {}'.format(aciertos))
+    aciertos += int(lab == label)
 
+print('ACIERTOS: {}/{}'.format(aciertos, len(ds_test)))
 
-'''
-    mins = np.minimum(maxs, d)
-
-print(maxs)
-print(mins)
-for m in M:
-    for e in E:
-
-        print([d[0] for d in data])
-        for d in data:
-            nums = d[0]
-            label = d[1]
-            maximum = np.max([d[0][m, e] for d in data])
-
-        #
-        #minimum = np.max([d[0][m, e] for d in data])
-        #print(m, e, maximum, minimum)
-'''
