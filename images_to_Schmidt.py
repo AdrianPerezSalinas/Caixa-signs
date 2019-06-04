@@ -3,18 +3,42 @@ import csv
 import numpy as np
 import os
 
-directory = './Data/OK'
-for filename in os.listdir(directory):
-    if filename.endswith('.png'):
-        dir_filname = os.path.join(directory, filename[:-4])
-        mat = image_preprocess(os.path.join(directory, filename), 8)
-        sc_ket = scale_ket(mat)
 
-        rho = partial_trace_scale(sc_ket, [0, 1, 2, 3])
-        lambdas = np.abs(np.linalg.eigvalsh(rho))
-        log_lambdas = np.log(lambdas)
-        np.savetxt(dir_filname + '.out', (lambdas, log_lambdas), delimiter=',')  # X is an array
+scales=[0,2,4]
+directory = '/media/adrianps/Files/Archivos/Trabajos/19_LaCaixa/Firmas/Caixa-signs/Firmas2/OK'
+files = '/media/adrianps/Files/Archivos/Firmas2/OK'
+print(len(os.listdir(files)))
+for filename in os.listdir(files)[:min(len(os.listdir(files)), 1000)]:
+    if filename.endswith('.png'):
+        dir=directory + '/CSV_0.4_'+str(scales) + '_coords'
+        createFolder(dir)
+        dir_filname = os.path.join(dir, filename[:-4])
+        mat = image_preprocess(os.path.join(files, filename), 8)
+        sc_ket = coords_ket(mat)
+        rho = partial_trace_scale(sc_ket, scales)
+        lambdas_ = (np.linalg.eigvalsh(rho))
+        r = (np.linalg.matrix_rank(rho))
+        lambdas = np.array([0]*(2**(2*len(scales)) - r) + list(np.linalg.eigvalsh(rho)[-r:]))
+        np.savetxt(dir_filname + '.out', lambdas, delimiter=',')  # X is an array
         print(dir_filname)
+
+directory = '/media/adrianps/Files/Archivos/Trabajos/19_LaCaixa/Firmas/Caixa-signs/Firmas2/KO'
+files = '/media/adrianps/Files/Archivos/Firmas2/KO'
+print(len(os.listdir(files)))
+for filename in os.listdir(files)[:min(len(os.listdir(files)), 1000)]:
+    if filename.endswith('.png'):
+        dir = directory + '/CSV_0.4_' + str(scales) + '_coords'
+        createFolder(dir)
+        dir_filname = os.path.join(dir, filename[:-4])
+        mat = image_preprocess(os.path.join(files, filename), 8)
+        sc_ket = coords_ket(mat)
+        rho = partial_trace_scale(sc_ket, scales)
+        lambdas_ = (np.linalg.eigvalsh(rho))
+        r = (np.linalg.matrix_rank(rho))
+        lambdas = np.array([0] * (2 ** (2 * len(scales)) - r) + list(np.linalg.eigvalsh(rho)[-r:]))
+        np.savetxt(dir_filname + '.out', lambdas, delimiter=',')  # X is an array
+        print(dir_filname)
+
         '''
         with open(dir_filname + '.csv', mode='w') as csv_file:
             fields = ['Measurement','Entropy 0', 'Entropy 1', 'Entropy 2', 'Entropy 3', 'Entropy 4',

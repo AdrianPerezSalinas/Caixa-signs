@@ -1,6 +1,6 @@
 import numpy as np
-from scipy.linalg import logm
 import cv2
+import os
 
 
 def image_preprocess(img_path, scales):
@@ -174,13 +174,26 @@ def CumCoordsEntropy(ket):
 
     return dicti
 
-def entropy(rho):
+def entropy(rho,func=1):
     lambdas = np.linalg.eigvalsh(rho)
     log_lambdas = np.zeros(len(lambdas))
-    for l in lambdas:
-        if l > 1e-5:
-            log_lambdas = np.log(l)
-    return -np.sum(lambdas*log_lambdas)
+    inv_lambdas = np.zeros(len(lambdas))
+    if func == 1:
+        log_lambdas[lambdas > 1e-5] = np.log(lambdas[lambdas > 1e-5])
+        return -np.sum(lambdas*log_lambdas)
+    if func == 2:
+        inv_lambdas[lambdas > 1e-5] = lambdas[lambdas > 1e-5]**(-1)
+        return -np.sum(lambdas*lambdas*(1 + inv_lambdas))
+    if func == 3:
+        inv_lambdas[lambdas > 1e-5] = lambdas[lambdas > 1e-5]**(-1)
+        return -np.sum(lambdas*lambdas*(lambdas + inv_lambdas))
+    if func == 4:
+        inv_lambdas[lambdas > 1e-5] = lambdas[lambdas > 1e-5]**(-1)
+        return -np.sum(lambdas*lambdas*(1 - inv_lambdas))
+    if func == 5:
+        inv_lambdas[lambdas > 1e-5] = lambdas[lambdas > 1e-5]**(-1)
+        return -np.sum(lambdas*lambdas*(lambdas - inv_lambdas))
+
 
 '''
 def partial_trace(rho, i):
@@ -266,3 +279,9 @@ def InvCumCoordsEntropy(rho, coord, scales):
 
     return dict, [i for i in range(scales-1,-1,-1)]
 '''
+def createFolder(directory): #Auxiliar function for creating directories
+    try:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+    except OSError:
+        print ('Error: Creating directory. ' + directory)

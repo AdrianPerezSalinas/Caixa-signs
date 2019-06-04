@@ -1,48 +1,59 @@
 import numpy as np
 import os
-import pandas as pd
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 from sklearn.neural_network import MLPClassifier
 from sklearn import svm
-import random
 
-met=5
-print(met)
-directory = ['./Firmas2/KO/CSV_0.2_'+str(met), './Firmas2/OK/CSV_0.2_'+str(met)]
+scales=[0,3,6]
+directory = ['./Firmas2/OK/CSV_0.3_' + str(scales), './Firmas2/KO/CSV_0.3_' + str(scales)]
 KO_data = []
 OK_data = []
+
+
+black_patch = mpatches.Patch(color='black', label='OK')
+red_patch = mpatches.Patch(color='red', label='KO')
+
+plt.show()
 dir = directory[0]
+fig, ax = plt.subplots(2)
 for filename in os.listdir(dir):
-    if filename.endswith('.csv'):
+    if filename.endswith('.out'):
         dir_filname = os.path.join(dir, filename)
-        dat = pd.read_csv(dir_filname, delimiter=',')
-        dat=dat.values
-        dat = dat[:,1:].astype('float')
-        dat=dat.flatten()
-        dat = np.delete(dat, 4)
+        dat = np.loadtxt(dir_filname, delimiter=',')[0]
+        #dat = np.flip(dat)
+        dat = (np.cumsum(dat))
+        ax[0].plot(dat, 'k.', alpha = .3, markersize = 1)
         KO_data.append((dat, directory.index(dir)))
 
-
+ax[0].set(ylim = (0, 1 ), ylabel='$\sum\lambda$')
+ax[0].legend(handles=[black_patch])
 dir = directory[1]
 for filename in os.listdir(dir):
-    if filename.endswith('.csv'):
+    if filename.endswith('.out'):
         dir_filname = os.path.join(dir, filename)
-        dat = pd.read_csv(dir_filname, delimiter=',')
-        dat=dat.values
-        dat = dat[:,1:].astype('float')
-        dat=dat.flatten()
-        dat = np.delete(dat, 4)
+        dat = np.loadtxt(dir_filname, delimiter=',')[0]
+        #dat = np.flip(dat)
+        dat = (np.cumsum(dat))
+        ax[1].plot(dat, 'r.', alpha = .3, markersize = 1)
         OK_data.append((dat, directory.index(dir)))
 
-print('ok')
-lim = 200
-steps=100
+ax[1].set(ylim = (0, 1 ), xlabel = r'Number of Eigenvalue', ylabel='$\sum\lambda$')
+ax[1].legend(handles = [red_patch])
+fig.savefig('Eigenvalues/cum_sum/' + str(scales))
+'''
+lim1 = 200
+lim2 = 400
+steps=2
 NN=np.zeros(steps)
 SVM=np.zeros(steps)
 for i in range(steps):
     random.shuffle(OK_data)
     random.shuffle(KO_data)
-    train_data = OK_data[:lim] + KO_data[:lim]
-    test_data = OK_data[lim:] + KO_data[lim:]
+    train_data = OK_data[:lim1] + KO_data[:lim1]
+    val_data = OK_data[lim1:lim2] + KO_data[lim1:lim2]
+    test_data = OK_data[lim2:] + KO_data[lim2:]
     X = []
     Y = []
     for d in train_data:
@@ -71,3 +82,4 @@ for i in range(steps):
 
 print('NN',np.mean(NN),np.std(NN))
 print('SVM',np.mean(SVM),np.std(SVM))
+'''
